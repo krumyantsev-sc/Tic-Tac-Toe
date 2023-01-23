@@ -32,7 +32,7 @@ function makeMove() {
             clearCells.push(cellArr[i]);
         }
     }
-    clearCells[randomInteger(0,clearCells.length)].innerHTML = "O";
+    clearCells[randomInteger(0,clearCells.length - 1)].textContent = "O";
 
 }
 
