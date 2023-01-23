@@ -4,18 +4,37 @@ let numOfMoves = 1;
 cells.onclick = function(event) {
     let target = event.target;
     if (target.tagName !== 'TD') return;
-    target.textContent = (numOfMoves % 2 === 0) ? "O" : "X";
-    numOfMoves++;
+    target.textContent = "X";
     if(checkWin(calcCurrentString("X"))) {
         alert("Победа игрока X");
         restartGame();
+        return;
     }
     if(checkWin(calcCurrentString("O"))) {
         alert("Победа игрока 0");
         restartGame();
+        return;
     }
-
+    makeMove();
 };
+
+function randomInteger(min, max) {
+    // случайное число от min до (max+1)
+    let rand = min + Math.random() * (max + 1 - min);
+    return Math.floor(rand);
+}
+
+function makeMove() {
+    let cellArr = document.querySelectorAll(".inner__cell");
+    let clearCells = [];
+    for (let i = 0; i < cellArr.length; i++) {
+        if(cellArr[i].textContent === "") {
+            clearCells.push(cellArr[i]);
+        }
+    }
+    clearCells[randomInteger(0,clearCells.length)].innerHTML = "O";
+
+}
 
 function restartGame() {
     let cellArr = document.querySelectorAll(".inner__cell");
