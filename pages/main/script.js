@@ -1,38 +1,31 @@
 let cells = document.querySelector(".gaming_cells");
 let numOfMoves = 1;
 let firstMove = true;
+let cellArr = document.querySelectorAll(".inner__cell");
+let activeCombination = null;
 
-let winCombinations = [
-    "012",
-    "036",
-    "048",
-    "147",
-    "258",
-    "246",
-    "345",
-    "678"
-];
+
 
 cells.onclick = function(event) {
     let target = event.target;
     if (target.tagName !== 'TD') return;
     target.textContent = "X";
-    if(checkWin(calcCurrentString("X"))) {
-        alert("Победа игрока X");
-        restartGame();
-        return;
-    }
-    if(checkWin(calcCurrentString("O"))) {
-        alert("Победа игрока 0");
-        restartGame();
-        return;
-    }
+    setTimeout(winHandler, 500, "X");
     if (firstMove) {
         makeFirstMove();
     } else {
         checkPossibleVariants();
     }
+   setTimeout(winHandler,500,"O");
+
 };
+
+function winHandler(str) {
+    if(checkWin(calcCurrentString(str))) {
+        alert(`Победа игрока ${str}`);
+        restartGame();
+    }
+}
 
 function randomInteger(min, max) {
     // случайное число от min до (max+1)
@@ -41,13 +34,6 @@ function randomInteger(min, max) {
 }
 
 function makeFirstMove() {
-    let cellArr = document.querySelectorAll(".inner__cell");
-    let clearCells = [];
-    for (let i = 0; i < cellArr.length; i++) {
-        if(cellArr[i].textContent === "") {
-            clearCells.push(cellArr[i]);
-        }
-    }
     firstMove = false;
     if (cellArr[4].textContent === "") {
         cellArr[4].textContent = "O";
@@ -67,66 +53,82 @@ function makeFirstMove() {
     }
     if (cellArr[8].textContent === "") {
         cellArr[8].textContent = "O";
-        return;
     }
-    console.log(clearCells);
-    //clearCells[randomInteger(0,clearCells.length - 1)].textContent = "O";
 
 }
 
 function checkPossibleVariants() {
-    let cellArr = document.querySelectorAll(".inner__cell");
+    let possibleVariants = [
+        [0,1,2],
+        [0,3,6],
+        [0,4,8],
+        [1,4,7],
+        [2,5,8],
+        [2,4,6],
+        [3,4,5],
+        [6,7,8]
+    ];
     let clearCells = [];
     let oPositions = [];
     let xPositions = [];
-
-
-    let priorityCombinations = [];
-
     for (let i = 0; i < cellArr.length; i++) {
         if(cellArr[i].textContent === "") {
-            clearCells.push(cellArr[i]);
+            clearCells.push(i);
         } else if (cellArr[i].textContent === "O") {
             oPositions.push(i);
         } else if (cellArr[i].textContent === "X") {
             xPositions.push(i);
         }
     }
-    console.log(priorityCombinations);
-    for (let i = 0; i < winCombinations.length; i++) {
-        for (let k = 0; k < xPositions.length; k++) {
-           for (let j = 0; j < winCombinations[i].length; i++) {
-               if (winCombinations[i][j] === xPositions[k]) {
-
-               } else {
-                   break;
-               }
-           }
-        }
-    }
-    console.log(priorityCombinations);
-
-
-    for (let i = 0; i < priorityCombinations.length; i++) {
-        for (let k = 0; k < oPositions.length; k++) {
-            for (let j = 0; j < priorityCombinations[i].length; j++) {
-                if (priorityCombinations[i][j] === oPositions[k]) {
-                    makeMove(cellArr, priorityCombinations);
-                }
+    let possibleVarsSet = new Set();
+    for (let i = 0; i < possibleVariants.length; i++) {
+        for (let j = 0; j < oPositions.length; j++) {
+            if (possibleVariants[i].indexOf(oPositions[j]) !== -1) {
+                possibleVarsSet.add(possibleVariants[i]);
             }
         }
     }
-    priorityCombinations = [];
+        possibleVarsSet = removeLoseVars(xPositions, possibleVarsSet);
+
+        if (possibleVarsSet.size === 0) {
+            cellArr[clearCells[randomInteger(0,clearCells.length - 1)]].textContent = "O";
+        }
+        let strats = Array.from(possibleVarsSet);
+        console.log(strats);
+        let currentStrat = findMorePerspectiveStrategy(strats, oPositions);
+        for(let i = 0; i < currentStrat.length; i++) {
+            if (clearCells.indexOf(currentStrat[i]) !== -1) {
+                cellArr[currentStrat[i]].textContent = "O";
+                break;
+            }
+        }
+
 }
 
-function makeMove(cellArr,comb) {
-    console.log(comb);
-    for (let i = 0; i < comb; i++) {
-        if (cellArr[i].textContent === "") {
-            cellArr[i].textContent = "O";
-            return;
+function findMorePerspectiveStrategy(strats, oPosition) {
+    for (let el of strats) {
+        let countr = 0;
+        for(let i = 0; i < oPosition.length; i++) {
+            if (el.includes(oPosition[i])) {
+                countr++;
+            }
+        }
+        if (countr > 1) {
+            return el;
         }
     }
+    return strats[0];
+}
+
+function removeLoseVars(xPositions, set) {
+    for (let item of set) {
+        for (let i = 0; i < xPositions.length; i++) {
+            if (item.indexOf(xPositions[i]) !== -1) {
+                set.delete(item);
+            }
+        }
+    }
+    return set;
 }
 
 function restartGame() {
@@ -134,6 +136,7 @@ function restartGame() {
     cellArr.forEach(elem => elem.textContent="");
     numOfMoves = 1;
     firstMove = true;
+    activeCombination = null;
 }
 
 function calcCurrentString(str) {
@@ -148,7 +151,16 @@ function calcCurrentString(str) {
 }
 
 function checkWin(currStr) {
-
+    const winCombinations = [
+        "012",
+        "036",
+        "048",
+        "147",
+        "258",
+        "246",
+        "345",
+        "678"
+    ];
     if (currStr.length < 3)
         return false;
     for (let i = 0; i < winCombinations.length; i++) {
